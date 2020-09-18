@@ -1,13 +1,13 @@
-# @tarojs/plugin-mock
+# zxc-taro-alioss
 
-> Taro 数据 Mock 插件
+> Taro 自动上传alioss插件
 
 ## 安装
 
 在 Taro 项目根目录下安装
 
 ```bash
-$ npm i @tarojs/plugin-mock --save
+$ yarn add zxc-taro-alioss --save
 ```
 
 ## 使用
@@ -24,78 +24,38 @@ const config = {
   plugins: [
     ...其余插件
 
-    '@tarojs/plugin-mock'
+    [zxc-taro-alioss,{
+
+    }]
   ]
   ...
 }
 ```
 
-这样在 `taro build` 编译完后就会启动一个数据 mock 服务器。
+这样在 `taro build` 编译完后就会自动上传alioss。
 
-### 参数
 
-Mock 插件可以接受如下参数：
+## 参考
+1. 阿里云的使用参考了阿里官方文档
+[对象存储 OSS ](https://help.aliyun.com/product/31815.html)
 
-| 参数项 | 类型 | 是否可选 | 用途 |
-| :-----| :---- | :---- | :---- |
-| host | string | 是 | 设置数据 mock 服务地址，默认为 127.0.0.1 |
-| port | number | 是 | 设置数据 mock 服务端口，默认为 9527 |
-| mocks | object | 是 | 设置数据 mock 接口 |
 
-其中 `mocks` 参数是用于设置数据 mock 接口，以 k-v 的方式进行设置，接口的 HTTP 方法通过在 key 中进行指定，例如：
 
+2. 将数组中指定元素移动到数组末端
 ```
-{
-  'GET /api/user/1': {
-    name: luckyadam
-  },
-
-  'POST /api/upload': {
-    file: xxxx
+//ES6箭头函数写法
+const moveZero = (arr) => {
+  let y = 0;//定义y用于控制循环结束
+  for (let i = 0; y < arr.length; y++) {
+    if (arr[i] === 0) arr.push(arr.splice(i, 1)[0]);//循环到是0的位置就删除该元素0并且在arr末尾push进这个元素0，由于splice删除了该位置元素，所以i不用+1，下次循环仍然检查i位置的元素
+    else i++;//循环到不是0的位置就继续往后循环
   }
-}
+  return arr;//返回操作后的原数组
+};
+ 
+//运行如下：
+moveZero([2,0,0,1,0,3]);//[2,1,3,0,0,0]
 ```
 
-支持的 HTTP 方法有：`['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']`
-
-如果项目中的接口过多，也可以不通过插件的 `mocks` 配置来设置接口，可以直接在项目中创建一个 `mock` 目录，在 `mock` 下添加接口配置文件来设置接口，接口配置文件支持使用 ES6 语法以及 TS，例如。
-
-如上配置可以改写成，在项目根目录下创建 `mock` 目录，添加一个 `api.ts` 文件，内容如下：
-
-```typescript
-// mock/api.ts
-
-export default {
-  'GET /api/user/1': {
-    name: luckyadam
-  },
-
-  'POST /api/upload': {
-    file: xxxx
-  }
-}
-```
-
-同时也支持使用 [`mockjs`](http://mockjs.com/) 来生成 mock 数据
-
-安装 `mockjs`
-
-```bash
-$ npm i mockjs --save
-```
-
-使用如下
-
-```ts
-// /mock/api.ts
-import mockjs from 'mockjs'
-
-export default {
-  'GET /api/tags': mockjs.mock({
-    'list|1-10': [{
-      // 属性 id 是一个自增数，起始值为 1，每次增 1
-      'id|+1': 1
-    }]
-  })
-}
-```
+## 以后新增功能
+node中输入用户选择来自定义编译效果

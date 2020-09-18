@@ -1,6 +1,6 @@
 {
   "name": "zxc-taro-alioss",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Taro 上传oss插件",
   "main": "index.js",
   "scripts": {
