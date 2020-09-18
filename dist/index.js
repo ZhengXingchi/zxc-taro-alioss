@@ -18,11 +18,16 @@ const defaultOptions = {
     uploadPath: '',
     exclude: /.DS_Store/,
     ignoreHtml: false,
+    delOldFile: true // 是否删除以前文件
 };
 /**
  * 文件数量
  */
 let count = 0;
+/**
+ * 删除文件数量
+ */
+let delnum = 0;
 /**
  * 上传的文件集合
  */
@@ -255,7 +260,12 @@ exports.default = (ctx, pluginOpts) => {
                 const res = await uploadFile(uploadFiles, newOssConfig, options, ctx.paths.outputPath);
                 console.log(`🎉 上传文件耗时： ${res / 1000}s\n`);
                 console.log(`🎉 已上传文件数： ${uploadFiles.length}\n`);
-                await delDir(newOssConfig, options);
+                if (options.delOldFile) {
+                    let delStartTime = Date.now();
+                    await delDir(newOssConfig, options);
+                    console.log(`共删除失效文件${delnum}个`);
+                    console.log(`🎉 删除文件耗时： ${(Date.now() - delStartTime) / 1000}s\n`);
+                }
                 await countFile(newOssConfig, options);
                 console.log(`https://${options.ossConfig.bucket}.${options.ossConfig.region}.aliyuncs.com/${options.uploadPath}下面共有文件${count}个`);
             }

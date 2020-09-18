@@ -1,9 +1,9 @@
 // import Server from './Server'
 // import { createMockMiddleware } from './utils'
-import  * as OSS from 'ali-oss';
-import  * as path from 'path';
-import  * as fs from 'fs';
-import  * as os from 'os';
+import * as OSS from 'ali-oss';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 
 
 const defaultOptions = {
@@ -18,13 +18,18 @@ const defaultOptions = {
   uploadPath: '', // 文件上传路径
   exclude: /.DS_Store/, // 排除文件
   ignoreHtml: false, // 不上传html
+  delOldFile: true// 是否删除以前文件
 };
 
 /**
  * 文件数量
  */
-let count:number=0
+let count: number = 0
+/**
+ * 删除文件数量
+ */
 
+let delnum: number = 0
 /**
  * OSS配置
  */
@@ -124,19 +129,19 @@ function filterFile(filePath: string, options: PluginOptions) {
  */
 function tailhtml() {
   if (uploadFiles.length == 0) {
-      return;
+    return;
   }
   else {
-      let len = uploadFiles.length;
-      for (let i = 0; i < len; i++) {
-          if (/\/*.html/.test(uploadFiles[i])) {
-             console.log(`将文件${uploadFiles[i]}移动到最后进行上传`);
-              uploadFiles.push(uploadFiles.splice(i, 1)[0]);
-              len--;
-              i--;
-            
-          }
+    let len = uploadFiles.length;
+    for (let i = 0; i < len; i++) {
+      if (/\/*.html/.test(uploadFiles[i])) {
+        console.log(`将文件${uploadFiles[i]}移动到最后进行上传`);
+        uploadFiles.push(uploadFiles.splice(i, 1)[0]);
+        len--;
+        i--;
+
       }
+    }
   }
 }
 
@@ -158,44 +163,46 @@ function readDirSync(fPath: string, option: PluginOptions) {
 }
 
 
-  
+
 
 /**
  *删除多余的文件
  *
  */
-async function delDir(ossConfig: OssConfig, options: PluginOptions, pre:string='') {
+async function delDir(ossConfig: OssConfig, options: PluginOptions, pre: string = '') {
   // 实例化oss客户端
   const ossClient = new OSS(ossConfig);
   const { uploadPath } = options;
   let prefix = pre || uploadPath.slice(1) + '/'
   const result = await ossClient.list({
-      prefix,
-      delimiter: '/'
+    prefix,
+    delimiter: '/'
   });
-  
+
   if (result.prefixes && result.prefixes.length > 0) {
-      for (let h = 0; h < result.prefixes.length; h++) {
-          // console.log('SubDir: %s', result.prefixes[h]);
-          await delDir(ossConfig, options, result.prefixes[h])
-      }
+    for (let h = 0; h < result.prefixes.length; h++) {
+      // console.log('SubDir: %s', result.prefixes[h]);
+      await delDir(ossConfig, options, result.prefixes[h])
+    }
   }
 
   if (result.objects && result.objects.length > 0) {
-      for (let k = 0; k < result.objects.length; k++) {
-          let item = result.objects[k]
-          // console.log('Object:', item.name, typeof item.name);
-          try {
-              
-              if (!ossFiles.includes('/' + item.name)) {
-                console.log(`${item.name}为以前版本文件，故删除`)
-                  await ossClient.delete(item.name);
-              }
-              //    console.log(result)
-          } catch (e) {
-              console.log(e);
-          }
+    for (let k = 0; k < result.objects.length; k++) {
+      let item = result.objects[k]
+     
+      // console.log('Object:', item.name, typeof item.name);
+      try {
+
+        if (!ossFiles.includes('/' + item.name)) {
+          console.log(`${item.name}为以前版本文件，故删除`)
+          await ossClient.delete(item.name);
+        }
+        //    console.log(result)
+      } catch (e) {
+        console.log(e);
       }
+      
+    }
   }
 }
 
@@ -210,23 +217,23 @@ async function countFile(ossConfig, options, pre = '') {
   const { uploadPath } = options;
   let prefix = pre || uploadPath.slice(1) + '/';
   const result = await ossClient.list({
-      prefix,
-      delimiter: '/'
+    prefix,
+    delimiter: '/'
   });
   if (result.prefixes && result.prefixes.length > 0) {
-      for (let h = 0; h < result.prefixes.length; h++) {
-          // console.log('SubDir: %s', result.prefixes[h]);
-          await countFile(ossConfig, options, result.prefixes[h]);
-      }
+    for (let h = 0; h < result.prefixes.length; h++) {
+      // console.log('SubDir: %s', result.prefixes[h]);
+      await countFile(ossConfig, options, result.prefixes[h]);
+    }
   }
   if (result.objects && result.objects.length > 0) {
-      for (let k = 0; k < result.objects.length; k++) {
-          // console.log('Object:', item.name, typeof item.name);
-          count++;
-        
-          
-         
-      }
+    for (let k = 0; k < result.objects.length; k++) {
+      // console.log('Object:', item.name, typeof item.name);
+      count++;
+
+
+
+    }
   }
 }
 
@@ -235,13 +242,13 @@ async function countFile(ossConfig, options, pre = '') {
  * 上传文件
  * @param {*} fils 要上传的列表
  */
-async function uploadFile(fils: any, ossConfig: OssConfig, options: PluginOptions,outputPath:string) {
+async function uploadFile(fils: any, ossConfig: OssConfig, options: PluginOptions, outputPath: string) {
   // 实例化oss客户端
   const ossClient = new OSS(ossConfig);
   const globalStartTime = Date.now();
   const { uploadPath, cdnPrefix } = options;
- 
-  
+
+
   for (const file of fils) {
     const result = await ossClient.put(`${file}`.replace(outputPath, uploadPath), file);
     ossFiles.push(`${file}`.replace(outputPath, uploadPath))
@@ -267,16 +274,16 @@ export default (ctx, pluginOpts) => {
   //   })
   // })
   // let isFirstWatch = true
-  const options = { ...defaultOptions, ...pluginOpts};
-  let ossSecret: any 
+  const options = { ...defaultOptions, ...pluginOpts };
+  let ossSecret: any
   const { ossConfig, uploadPath, configName } = options;
   ctx.onBuildStart(() => {
     console.log('编译开始！')
     // const aliossConfigPath = path.join(`${os.homedir()}/${configName}`);
     // const aliossConfigPath = path.resolve(__dirname , "../../../" , configName);
-    const aliossConfigPath = path.resolve( ctx.paths.appPath, configName);
+    const aliossConfigPath = path.resolve(ctx.paths.appPath, configName);
     console.log(`😊 当前配置文件路径${aliossConfigPath}`);
-    ossSecret= loadConfig(aliossConfigPath);
+    ossSecret = loadConfig(aliossConfigPath);
     if (!ossSecret) {
       console.log(`🍉 请正确配置${configName}文件\n`);
       return process.exit(-1);
@@ -295,7 +302,7 @@ export default (ctx, pluginOpts) => {
     }
   })
   ctx.onBuildFinish(async () => {
-  
+
     const newOssConfig = { ...ossConfig, ...ossSecret };
     console.log('🤗 应用构建完成 准备上传至OSS\n');
     readDirSync(ctx.paths.outputPath, options);
@@ -306,16 +313,21 @@ export default (ctx, pluginOpts) => {
     }
     (async function () {
       try {
-        const res: any = await uploadFile(uploadFiles, newOssConfig, options,ctx.paths.outputPath);
+        const res: any = await uploadFile(uploadFiles, newOssConfig, options, ctx.paths.outputPath);
         console.log(`🎉 上传文件耗时： ${res / 1000}s\n`);
         console.log(`🎉 已上传文件数： ${uploadFiles.length}\n`);
-        await delDir(newOssConfig,options)
-        await countFile(newOssConfig, options)
-        console.log(`https://${options.ossConfig.bucket}.${options.ossConfig.region}.aliyuncs.com/${options.uploadPath}下面共有文件${count}个`)
-      } catch (e) {
-        return console.log(`${e}\n`);
-      }
-    })();
-  
+        if (options.delOldFile) {
+          let delStartTime = Date.now();
+          await delDir(newOssConfig, options)
+          console.log(`共删除失效文件${delnum}个`)
+          console.log(`🎉 删除文件耗时： ${(Date.now() - delStartTime) / 1000}s\n`);
+        }
+          await countFile(newOssConfig, options)
+          console.log(`https://${options.ossConfig.bucket}.${options.ossConfig.region}.aliyuncs.com/${options.uploadPath}下面共有文件${count}个`)
+        } catch (e) {
+          return console.log(`${e}\n`);
+        }
+      })();
+
   })
 }
